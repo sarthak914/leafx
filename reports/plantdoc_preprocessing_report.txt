@@ -1,0 +1,75 @@
+============================================================
+PLANTDOC DATASET PREPROCESSING REPORT
+============================================================
+Dataset Path: C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master
+Analysis Date: 2026-10-20 22:21:27.372804
+
+DATASET STRUCTURE:
+Total Classes: 28
+Total Train Images: 2336
+Total Test Images: 236
+Total Images: 2572
+
+CLASS DISTRIBUTION:
+Class Name		Train	Test	Total
+--------------------------------------------------
+Apple Scab Leaf          	83	10	93
+Apple leaf               	82	9	91
+Apple rust leaf          	78	10	88
+Bell_pepper leaf         	53	8	61
+Bell_pepper leaf spot    	62	9	71
+Blueberry leaf           	104	11	115
+Cherry leaf              	47	10	57
+Corn Gray leaf spot      	64	4	68
+Corn leaf blight         	179	12	191
+Corn rust leaf           	106	10	116
+Peach leaf               	102	9	111
+Potato leaf early blight 	108	8	116
+Potato leaf late blight  	97	8	105
+Raspberry leaf           	112	7	119
+Soyabean leaf            	57	8	65
+Squash Powdery mildew leaf	124	6	130
+Strawberry leaf          	88	8	96
+Tomato Early blight leaf 	79	9	88
+Tomato Septoria leaf spot	140	11	151
+Tomato leaf              	55	8	63
+Tomato leaf bacterial spot	101	9	110
+Tomato leaf late blight  	101	10	111
+Tomato leaf mosaic virus 	44	10	54
+Tomato leaf yellow virus 	70	6	76
+Tomato mold leaf         	85	6	91
+Tomato two spotted spider mites leaf	2	0	2
+grape leaf               	57	12	69
+grape leaf black rot     	56	8	64
+
+IMAGE INTEGRITY:
+Corrupted Images: 7
+Invalid Images: 5
+Total Problematic: 12
+
+Corrupted Images:
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\Apple leaf\apple-tree-branch-blossom-plant-fruit-berry-leaf-flower-food-green-produce-evergreen-flora-sad-shrub-apples-branch-with-apples-flowering-plant-rose-family-acerola-malpighia-woody-plant-land-plant-928225.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\Blueberry leaf\plant-fruit-berry-leaf-flower-food-herb-produce-blueberry-botany-flora-plants-wildflower-shrub-macro-photography-wipes-flowering-plant-bilberry-huckleberry-dayflower-land-plant-dayflower-family-1090218.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\Cherry leaf\tree-branch-blossom-plant-fruit-berry-leaf-flower-ripe-food-red-produce-botany-flora-leaves-shrub-fruits-bing-cherry-cherries-flowering-plant-rose-family-fruity-cherry-harvest-sweet-cherry-land-plant-913933.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\Squash Powdery mildew leaf\powdery-mildew-on-squash-plants-you-can-prevent-powdery-mildew-disease-by-avoiding-overhead-sprinkling-and-watering-in-the-morning-rather-than-evening-forum-news-service-file-photo-what-causes-powdery.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\Squash Powdery mildew leaf\what-is-powdery-mildew-on-plants-mild-powdery-mildew-that-will-appear-on-most-squash-leaves-during-the-mid-summer-powdery-mildew-plant-spray-powdery-mildew-on-tomato-plant-leaves.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\Strawberry leaf\strawberry-plant-leaves-the-distorted-wrinkled-leaves-are-showing-signs-of-cold-damage-the-older-and-younger-leaves-around-them-are-normal-looking-strawberry-plant-leaves-turn-red.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\grape leaf\nature-plant-grape-vine-wine-fruit-food-green-produce-agriculture-grapevine-vines-shrub-grapes-winegrowing-rebstock-flowering-plant-vitis-grape-leaves-green-grapes-swiss-francs-land-plant-grapevine-family-556232.jpg
+
+Invalid Images:
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\Apple rust leaf\Rust--CA.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\Corn Gray leaf spot\Gray%20Leaf%20SpotCORN039.JPG.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\Squash Powdery mildew leaf\powderymildew_300.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\grape leaf\WildGrapeLeaf_cutout.jpg
+  - C:/Users/Naman Sharma/PlantDoc_data/PlantDoc-Dataset-master\train\grape leaf black rot\6-14-11%20ANNEMIEK%20blkRotSp.jpg
+
+IMAGE STATISTICS:
+Images Analyzed: 2560
+Width Range: 115 - 6000 (avg: 1065.3)
+Height Range: 69 - 6000 (avg: 908.5)
+File Size Range: 2.8KB - 12280.3KB
+Average File Size: 373.7KB
+
+============================================================
+END OF REPORT
+============================================================
