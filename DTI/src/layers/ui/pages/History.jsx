@@ -1,18 +1,37 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import Card from "../components/Card";
 import { getPredictionHistory } from "../../services/api/predictionApi";
+import { useAuth } from "../../services/auth/AuthContext";
 
 function History() {
   const { t } = useTranslation();
+  const { user, loading } = useAuth();
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    if (!user) {
+      setRows(null);
+      return;
+    }
     getPredictionHistory()
       .then(setRows)
       .catch((err) => setError(err?.message || "Failed to load history"));
-  }, []);
+  }, [user]);
+
+  if (!loading && !user) {
+    return (
+      <section className="page-shell space-y-6">
+        <h2 className="text-3xl font-bold">{t("history_title")}</h2>
+        <div className="glass-panel space-y-3 rounded-2xl p-6 text-slate-300">
+          <p>{t("history_login_needed")}</p>
+          <Link to="/login" className="text-leafSecondary hover:underline">{t("login")} / {t("signup")}</Link>
+        </div>
+      </section>
+    );
+  }
 
   const healthy = rows ? rows.filter((r) => r.disease === "Healthy").length : 0;
 

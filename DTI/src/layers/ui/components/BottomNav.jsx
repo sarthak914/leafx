@@ -8,19 +8,20 @@ function BottomNav() {
     { to: "/", label: t("nav_home") },
     { to: "/scan", label: t("nav_scan") },
     { to: "/results", label: t("nav_results") },
+    { to: "/assistant", label: t("nav_assistant_short") },
     { to: "/history", label: t("nav_history") },
   ];
 
   return (
     <nav className="glass-panel fixed inset-x-4 bottom-4 z-40 rounded-2xl p-2 md:hidden">
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-5 gap-1">
         {items.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             end={item.to === "/"}
             className={({ isActive }) =>
-              `rounded-lg px-2 py-2 text-center text-xs tracking-wide ${
+              `rounded-lg px-1 py-2 text-center text-xs tracking-wide ${
                 isActive ? "bg-leafSecondary/20 text-leafSecondary" : "text-slate-300"
               }`
             }

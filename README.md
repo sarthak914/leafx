@@ -1,28 +1,28 @@
 # 🌿 AgroNiddan (LeafX) — AI Plant Disease Detection
 
-**Milestone 2 build.** A YOLOv8 model trained on the PlantDoc dataset detects the condition of a leaf from a photo,
-estimates severity and plant health, and suggests a first-line treatment. It is served through a Flask REST API
-and a React web app.
+**Milestone 3 build.** Upload or photograph a leaf: a YOLOv8 **classifier** trained on the PlantDoc dataset names the
+plant and its disease (28 classes), a **Grad-CAM heatmap** shows which part of the leaf drove the decision, a YOLOv8
+**detector** + colour analysis estimate severity and plant health, and a **Gemini-powered assistant** answers
+follow-up questions. Users can sign up and keep their own scan history. Flask REST API + React web app.
 
 ---
 
-## 📌 Milestone 2 scope
+## 📌 Scope by milestone
 
 | Status | Part |
 |---|---|
-| ✅ Done | Dataset analysis: class counts, image integrity check, image size stats, plots (`reports/`) |
-| ✅ Done | Data pipeline: folder labels → YOLO labels → 70/20/10 split → resize to 640 px |
-| ✅ Done | Baseline YOLOv8n training (transfer learning from COCO weights) + metrics/plots |
-| ✅ Done | Inference module: disease mapping (28 classes), severity, plant health, treatment advice |
-| ✅ Done | Flask API: `/api/health`, `/api/predict`, `/api/history` (SQLite) |
-| ✅ Done | React UI: Home → Scan (upload / camera) → Results (annotated image) → History |
-| ⏳ Final | Full GPU training (YOLOv8s, 640 px, 100 epochs) on Colab — `PlantDoc_YOLOv8_Colab.ipynb` |
-| ⏳ Final | Lesion-level boxes / segmentation for a true infected-area %, more data (PlantVillage) |
-| ⏳ Final | AI chatbot, weather-based tips, regional languages, user accounts |
+| ✅ M2 | Dataset analysis, data pipeline (labels → 70/20/10 split → resize), YOLOv8n detector baseline |
+| ✅ M2 | Flask API + React UI (Home → Scan → Results → History), honest "nothing detected" answers |
+| ✅ **M3** | **YOLOv8s classifier** on the same split: test accuracy **39.1 % → 67.6 %** (top-5: 95.7 %) |
+| ✅ **M3** | **Grad-CAM** explainable-AI heatmap on every scan, top-3 predictions |
+| ✅ **M3** | **User accounts** (sign up / log in / log out, scrypt-hashed passwords) + per-user scan history |
+| ✅ **M3** | **AI farming assistant** (Google Gemini) with scan context, multilingual, automatic model fallback |
+| ✅ **M3** | Robustness: 54-case API test suite, input validation, mobile layout fixes |
+| ⏳ Next | Stronger backbone / larger images on GPU to pass 70 %, lesion segmentation, regional-language UI |
 
 ---
 
-## 🧠 How it works
+## 🧠 How it works (M3)
 
 ```
 Leaf photo (upload / camera)
@@ -30,79 +30,75 @@ Leaf photo (upload / camera)
         ▼
 POST /api/predict  (Flask)
         │
+        ├─► YOLOv8s-cls classifier (runs/classify/train/weights/best.pt)
+        │      → plant + condition + confidence, top-3
+        ├─► YOLOv8n detector (runs/detect/train/weights/best.pt)
+        │      → box around the leaf (whole image if none)
+        ├─► HSV colour check inside the box
+        │      → infected % = yellow/brown share of plant pixels → severity Low/Medium/Severe, health %
+        ├─► Grad-CAM on the classifier's last feature layer → heatmap
+        └─► rule-based treatment suggestion
         ▼
-YOLOv8n detector  (best.pt, 28 PlantDoc classes)
-        │  boxes + class + confidence
-        ▼
-model/predict.py
-  ├─ class → (plant, condition)          e.g. "Tomato leaf late blight" → Tomato, Late Blight
-  ├─ infected area % = yellow/brown share of plant pixels inside the box (HSV colour thresholding)
-  ├─ severity % = infected area  → Low (<10) / Medium (<30) / Severe
-  ├─ plant health % = 100 − infected area  (healthy class → 100 %)
-  └─ treatment suggestion (rule-based lookup)
+JSON + annotated image + heatmap → Results page → saved to the user's history (if logged in)
         │
-        ▼
-JSON + annotated image → Results page, saved to SQLite history
+        └─► "Ask the AI assistant" → POST /api/chat (Gemini, with the scan as context)
 ```
 
-If nothing is detected above the confidence threshold (25 %), the API says so honestly; it never makes up a result.
+If the classifier's best guess is below 25 % confidence, the app says it isn't sure instead of guessing.
 
 ---
 
-## 📊 Dataset
+## 📊 Results
 
-**PlantDoc** (Singh et al., 2020, CC-BY-4.0): 2,572 real-field leaf images (scraped from the web, cluttered
-backgrounds), 13 plant species, 28 classes (17 diseases + healthy leaves).
+Same PlantDoc split for both models: 1,791 train / 513 val / 256 test (held out, scored once).
 
-| Step | Script | Output |
-|---|---|---|
-| EDA + integrity check | `plantdoc_preprocessing.py` | `reports/` (report + 2 plots) — 12 problematic files found |
-| Labels from folders (1 full-image box per image) | `generate_yolo_labels_from_folders.py` | `labels_src/`, `data.yaml`, `classes_mapping.txt` |
-| Split 70/20/10 (seed 42) + resize ≤640 px | `dataset_preparation.py` | `dataset/images|labels/{train,val,test}` — 1,796 / 513 / 256 |
+| Model | Milestone | Test top-1 | Test top-5 | Notes |
+|---|---|---|---|---|
+| YOLOv8n detector (full-image boxes) | M2 | 39.1 % | — | 15 epochs, 256 px, frozen backbone (mAP@50 0.435) |
+| **YOLOv8s-cls classifier** | **M3** | **67.6 %** (173/256) | **95.7 %** | 60 epochs, 224 px, ImageNet-pretrained, best = epoch 57 |
 
----
+Validation accuracy: 21.6 % (epoch 1) → 63.4 % (epoch 5) → 68.0 % (epoch 57, best). CPU training (Intel i5-1035G1),
+2.6 h for the resumed part, about 5 min per epoch. Inference ≈ 0.4–0.7 s per scan including Grad-CAM.
 
-## 📈 Baseline results (Milestone 2)
-
-See `reports/training/` for `results.png`, `confusion_matrix_normalized.png`, `PR_curve.png` and `results.csv`.
-
-YOLOv8n, COCO-pretrained, backbone frozen, 15 epochs, 256 px, batch 16, CPU (Intel i5-1035G1), 54 min.
-
-| Split | Images | Precision | Recall | mAP@50 | mAP@50-95 | Top-1 accuracy* |
-|---|---|---|---|---|---|---|
-| Validation | 513 | 0.368 | 0.487 | 0.424 | 0.423 | — |
-| Test (held out) | 256 | 0.390 | 0.387 | 0.435 | 0.435 | 39.1 % (100/256) |
-
-\*Top-1: the highest-confidence box has the correct class (60 test images had no box above 25 % confidence).
-mAP@50 rose steadily from 0.066 (epoch 1) to 0.424 (epoch 15) and was still improving — longer GPU training is
-the main lever for the final milestone. Inference: ~40–200 ms per image on CPU.
+Per-class test accuracy and the most common confusions are in `reports/training_cls/test_report.txt`; curves and
+the confusion matrix are in `reports/training_cls/`. Strongest: corn rust, potato late blight, raspberry,
+strawberry (100 %). Weakest: soybean (0/4), tomato early blight and leaf mold (1/6). Most common mistake: potato
+early blight → late blight (5×).
 
 ---
 
-## 🚀 Running the demo
+## 🚀 Running the app
 
-Prerequisites: Python 3.10+ with `pip install -r requirements.txt`. The trained weights must be at
-`runs/detect/train/weights/best.pt` (or set `PLANTDOC_WEIGHTS` in `.env`).
+Prerequisites: Python 3.10+ and `pip install -r requirements.txt`.
 
 ```bash
-# Windows: double-click run_demo.cmd, or
+# Windows: double-click run_demo.cmd (picks the Python that has the packages), or
 python app.py
-# open http://127.0.0.1:5000
+# then open http://127.0.0.1:5000
 ```
 
-Command-line prediction:
+**AI assistant:** copy `.env.example` to `.env` and set `GEMINI_API_KEY=` (free key from
+https://aistudio.google.com/app/apikey). Without a key everything else works; the assistant says it isn't configured.
+
+Command-line prediction (saves the annotated image and Grad-CAM heatmap):
 
 ```bash
-python model/predict.py --image path/to/leaf.jpg
+python model/predict.py --image demo_images/Corn_rust_leaf__Corn-Southern-Rust-7-17-F1.jpg
+python model/predict.py --image <leaf.jpg> --detector-only   # Milestone 2 behaviour
 ```
 
-Rebuilding the frontend (only if you change `DTI/src`):
+Rebuilding the frontend (only after changing `DTI/src`): `cd DTI && npm install && npm run build`.
 
-```bash
-cd DTI
-npm install
-npm run build
-```
+## 🔌 API
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| GET | `/api/health` | Status, loaded models, whether the assistant is configured |
+| POST | `/api/predict` | `{imageDataUrl, conf?}` → diagnosis, top-3, severity, annotated image, heatmap |
+| GET | `/api/history` | Logged-in user's last 25 scans (401 for guests) |
+| POST | `/api/auth/signup` · `/api/auth/login` · `/api/auth/logout` | Accounts (session cookie) |
+| GET | `/api/auth/me` | Current user or `null` |
+| POST | `/api/chat` | `{message, history?, context?}` → Gemini reply |
 
 ## 🔁 Reproducing training
 
@@ -110,33 +106,36 @@ npm run build
 python plantdoc_preprocessing.py --dataset <PlantDoc-Dataset> --output-dir reports
 python generate_yolo_labels_from_folders.py --source-root <PlantDoc-Dataset> --labels-out <data>/labels_src --dataset-dir <data>/dataset
 python dataset_preparation.py --source-dirs <PlantDoc-Dataset>/train <PlantDoc-Dataset>/test --labels-root <data>/labels_src --output-dir <data>/dataset --skip-missing-labels --mode copy --max-size 640
-python train_yolo.py --epochs 15 --imgsz 256 --batch 16 --device cpu --freeze 10   # CPU baseline
+python train_yolo.py --epochs 15 --imgsz 256 --batch 16 --device cpu --freeze 10           # M2 detector
+python prepare_classification_dataset.py --data data.yaml --output-dir <data>/dataset_cls   # M3: same split, class folders
+python train_classifier.py --data <data>/dataset_cls --model yolov8s-cls.pt --epochs 60 --device cpu
+python train_classifier.py --data <data>/dataset_cls --resume                               # continue after an interruption
 ```
-
-On a GPU (Colab T4) use `PlantDoc_YOLOv8_Colab.ipynb` (YOLOv8s, 640 px, 100 epochs).
 
 ---
 
 ## 🏗️ Project structure
 
 ```
-app.py                     Flask REST API + serves the built frontend
-model/predict.py           Shared inference logic (CLI + API)
-plantdoc_preprocessing.py  Dataset EDA + integrity check
-generate_yolo_labels_from_folders.py
-dataset_preparation.py     Split + resize into YOLO layout
-train_yolo.py              YOLOv8 training
-PlantDoc_YOLOv8_Colab.ipynb  GPU training notebook
-data.yaml                  YOLO dataset config (28 classes)
-reports/                   EDA plots + training curves
-runs/detect/train/         Training run (weights/best.pt)
-DTI/                       React + Vite + Tailwind frontend (src/, dist/)
+app.py                         Flask API (predict, history, auth, chat) + serves the built frontend
+model/predict.py               Detector inference, class → (plant, disease), colour severity, treatment table, CLI
+model/classifier.py            Classifier, Grad-CAM, combined diagnose() used by API and CLI
+plantdoc_preprocessing.py      Dataset EDA + integrity check
+generate_yolo_labels_from_folders.py · dataset_preparation.py   Labels, split, resize
+prepare_classification_dataset.py    Same split in class-folder layout for the classifier
+train_yolo.py · train_classifier.py  Training (detector / classifier)
+reports/                       EDA plots, detector (training/) and classifier (training_cls/) results
+runs/detect/train/weights/best.pt    M2 detector      runs/classify/train/weights/best.pt   M3 classifier
+DTI/                           React + Vite + Tailwind frontend (src/, built dist/)
+demo_images/                   Held-out test images for the live demo (+ hard_cases/)
+PROJECT_CONTEXT.md             Complete technical description and change log
+VIVA_NOTES.md                  Demo script and viva Q&A
 ```
 
 ## 🛠️ Tech stack
 
-Python, Ultralytics YOLOv8, PyTorch, Flask, SQLite, Pillow, pandas, matplotlib · React 19, Vite, Tailwind CSS,
-Framer Motion, React Router.
+Python, Ultralytics YOLOv8, PyTorch, OpenCV, Flask, SQLite, Werkzeug security, Google Gen AI SDK (Gemini) ·
+React 19, Vite, Tailwind CSS, Framer Motion, React Router, i18next.
 
 ## 👨‍💻 Credits
 

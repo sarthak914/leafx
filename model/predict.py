@@ -181,6 +181,11 @@ def parse_args() -> argparse.Namespace:
         help="Enable test-time augmentation for potentially better predictions.",
     )
     parser.add_argument("--device", type=str, default="", help='Device: "cpu", "0", etc.')
+    parser.add_argument(
+        "--detector-only",
+        action="store_true",
+        help="Use only the YOLO detector (Milestone 2 behaviour), even if a classifier is trained.",
+    )
     return parser.parse_args()
 
 
@@ -400,11 +405,61 @@ def run_prediction(
     return summaries, out_path
 
 
+def run_classifier_cli(image_path: Path, output_dir: Path, conf: float) -> Optional[int]:
+    """Milestone 3 path: classifier + detector + Grad-CAM. Returns None if no classifier is trained."""
+    import sys
+
+    if str(REPO_ROOT) not in sys.path:
+        sys.path.insert(0, str(REPO_ROOT))
+    from ultralytics import YOLO  # type: ignore
+
+    from model.classifier import diagnose, find_classifier_weights
+
+    cls_weights = find_classifier_weights()
+    if cls_weights is None:
+        return None
+    det_weights = find_weights()
+    result = diagnose(
+        Image.open(image_path),
+        YOLO(str(cls_weights)),
+        YOLO(str(det_weights)) if det_weights else None,
+        conf=conf,
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
+    annotated_path = output_dir / f"{image_path.stem}_predicted.jpg"
+    result["annotated"].save(annotated_path)
+
+    print(f"Using classifier weights: {cls_weights}")
+    if result["status"] != "detected":
+        print(result["message"])
+        return 0
+    print(f"Plant: {result['plant']}")
+    print(f"Disease: {result['disease']}")
+    print(f"Confidence: {result['confidence']:.2f}%")
+    print(f"Severity: {result['severityLevel']} ({result['severity']:.2f}%)")
+    print(f"Health: {result['plantHealth']:.2f}%")
+    print(f"Recommendation: {result['suggestion']}")
+    print("Top 3: " + ", ".join(f"{p['plant']} {p['disease']} {p['confidence']:.1f}%" for p in result["top3"]))
+    print(f"Annotated output saved at: {annotated_path}")
+    if result["heatmap"] is not None:
+        heatmap_path = output_dir / f"{image_path.stem}_gradcam.jpg"
+        result["heatmap"].save(heatmap_path)
+        print(f"Grad-CAM heatmap saved at: {heatmap_path}")
+    return 0
+
+
 def main() -> int:
     args = parse_args()
     try:
         image_path = resolve_image_path(args.image)
+        if not image_path.is_file():
+            raise FileNotFoundError(f"Invalid image path: {image_path}")
         output_dir = (Path.cwd() / args.output_dir).resolve()
+        if not args.detector_only and args.weights.strip().lower() == "auto":
+            code = run_classifier_cli(image_path, output_dir, args.conf)
+            if code is not None:
+                return code
+
         weights_arg: Path | str = "auto" if args.weights.strip().lower() == "auto" else (Path.cwd() / args.weights).resolve()
         model, used_weights = load_model(weights_arg)
 

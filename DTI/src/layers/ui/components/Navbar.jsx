@@ -1,13 +1,23 @@
 ﻿import { NavLink } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../services/auth/AuthContext";
+
+const linkClass = ({ isActive }) =>
+  `rounded-full px-4 py-2 text-xs tracking-[0.12em] transition ${
+    isActive
+      ? "border border-leafPrimary/50 bg-leafPrimary/10 text-leafPrimary shadow-glowPrimary"
+      : "border border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5"
+  }`;
 
 function Navbar() {
   const { t } = useTranslation();
+  const { user } = useAuth();
 
   const links = [
     { to: "/", label: t("nav_home") },
     { to: "/scan", label: t("nav_scan") },
     { to: "/results", label: t("nav_results") },
+    { to: "/assistant", label: t("nav_assistant") },
     { to: "/history", label: t("nav_history") },
   ];
 
@@ -17,22 +27,14 @@ function Navbar() {
         <p className="text-sm font-bold tracking-[0.12em] sm:text-base">{t("brand_name")}</p>
         <div className="hidden items-center gap-2 md:flex">
           {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.to === "/"}
-              className={({ isActive }) =>
-                `rounded-full px-4 py-2 text-xs tracking-[0.12em] transition ${
-                  isActive
-                    ? "border border-leafPrimary/50 bg-leafPrimary/10 text-leafPrimary shadow-glowPrimary"
-                    : "border border-transparent text-slate-300 hover:border-white/10 hover:bg-white/5"
-                }`
-              }
-            >
+            <NavLink key={link.to} to={link.to} end={link.to === "/"} className={linkClass}>
               {link.label}
             </NavLink>
           ))}
         </div>
+        <NavLink to="/login" className={linkClass}>
+          {user ? `👤 ${user.name.split(" ")[0]}` : t("login")}
+        </NavLink>
       </nav>
     </header>
   );

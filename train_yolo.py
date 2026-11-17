@@ -24,7 +24,6 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train YOLOv8 on plant disease dataset.")
     parser.add_argument(
@@ -85,6 +84,7 @@ def _resolve_data_paths(data_yaml_path: Path) -> tuple[Path, Path, Path, Path]:
     - train/val/test: paths relative to dataset_root (or absolute)
     """
     import yaml  # provided via ultralytics dependency (PyYAML)
+    
 
     data = yaml.safe_load(data_yaml_path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
@@ -227,7 +227,6 @@ def main() -> int:
             pass
 
     return 0
-
 
 if __name__ == "__main__":
     raise SystemExit(main())

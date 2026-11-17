@@ -1,0 +1,40 @@
+YOLOv8s-cls best.pt (epoch 57) on TEST: top-1 173/256 = 0.6758 | top-5 0.9570 | 41 ms/img
+
+Per-class test accuracy (correct/total):
+  Soyabean leaf                           0/ 4 = 0%
+  Tomato Early blight leaf                1/ 6 = 17%
+  Tomato mold leaf                        1/ 6 = 17%
+  Bell_pepper leaf spot                   2/ 6 = 33%
+  Tomato leaf bacterial spot              4/11 = 36%
+  Potato leaf early blight                5/13 = 38%
+  Cherry leaf                             2/ 5 = 40%
+  Tomato leaf late blight                 4/ 9 = 44%
+  Tomato leaf                             3/ 6 = 50%
+  Corn Gray leaf spot                     3/ 5 = 60%
+  Tomato leaf mosaic virus                5/ 8 = 62%
+  Bell_pepper leaf                        7/11 = 64%
+  grape leaf                              8/12 = 67%
+  Tomato Septoria leaf spot              15/21 = 71%
+  Apple leaf                              6/ 8 = 75%
+  Apple rust leaf                         6/ 8 = 75%
+  Corn leaf blight                       12/16 = 75%
+  Blueberry leaf                         13/17 = 76%
+  grape leaf black rot                    7/ 9 = 78%
+  Apple Scab Leaf                         8/10 = 80%
+  Tomato leaf yellow virus                5/ 6 = 83%
+  Peach leaf                             12/14 = 86%
+  Squash Powdery mildew leaf             14/15 = 93%
+  Corn rust leaf                          8/ 8 = 100%
+  Potato leaf late blight                 6/ 6 = 100%
+  Raspberry leaf                          9/ 9 = 100%
+  Strawberry leaf                         7/ 7 = 100%
+
+Most common confusions (true -> predicted):
+  5x  Potato leaf early blight -> Potato leaf late blight
+  4x  Tomato leaf bacterial spot -> Tomato Septoria leaf spot
+  3x  Bell_pepper leaf -> Bell_pepper leaf spot
+  3x  Corn leaf blight -> Corn Gray leaf spot
+  3x  grape leaf -> Raspberry leaf
+  3x  Tomato Early blight leaf -> Tomato Septoria leaf spot
+  2x  Blueberry leaf -> Tomato leaf
+  2x  Cherry leaf -> Apple leaf

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import Button from "../components/Button";
 
 const severityTone = {
   None: "text-leafSecondary",
@@ -11,8 +13,10 @@ const severityTone = {
 
 function Results() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [image, setImage] = useState("");
   const [result, setResult] = useState(null);
+  const [view, setView] = useState("boxes");
 
   useEffect(() => {
     setImage(localStorage.getItem("leafx-image") || "");
@@ -35,18 +39,36 @@ function Results() {
   }
 
   const detected = result.status === "detected";
+  const showHeatmap = view === "heatmap" && result.heatmapImage;
 
   return (
     <section className="page-shell space-y-6">
       <h2 className="text-3xl font-bold">{t("results_title")}</h2>
-      <div className="glass-panel rounded-2xl p-4">
+      <div className="glass-panel space-y-3 rounded-2xl p-4">
+        {result.heatmapImage && (
+          <div className="flex gap-2">
+            {["boxes", "heatmap"].map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                className={`rounded-full px-4 py-1.5 text-xs tracking-wider ${
+                  view === v ? "bg-leafPrimary/20 text-leafPrimary" : "text-slate-300 hover:bg-white/5"
+                }`}
+              >
+                {v === "boxes" ? t("view_detection") : t("view_heatmap")}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="relative overflow-hidden rounded-xl border border-leafPrimary/40">
           <img
-            src={result.annotatedImage || image}
+            src={showHeatmap ? result.heatmapImage : result.annotatedImage || image}
             alt={t("leaf_scan_alt")}
             className="max-h-[480px] w-full object-contain"
           />
         </div>
+        {showHeatmap && <p className="text-xs text-slate-400">{t("heatmap_explain")}</p>}
       </div>
 
       {!detected ? (
@@ -90,21 +112,40 @@ function Results() {
                   {t("inference_time")}: {Number(result.inferenceMs).toFixed(0)} ms
                 </p>
               )}
+              <p className="text-xs text-slate-500">
+                {result.saved ? (
+                  t("saved_to_history")
+                ) : (
+                  <>
+                    <Link to="/login" className="text-leafSecondary hover:underline">{t("login")}</Link>{" "}
+                    {t("login_to_save")}
+                  </>
+                )}
+              </p>
             </div>
-            <div className="premium-card">
+            <div className="premium-card space-y-3">
               <p className="text-xs tracking-[0.2em] text-leafPrimary">{t("recommendation")}</p>
-              <p className="mt-3 text-sm leading-relaxed text-slate-200">{result.suggestion}</p>
-              <p className="mt-4 border-t border-white/10 pt-3 text-xs text-slate-500">{t("disclaimer")}</p>
+              <p className="text-sm leading-relaxed text-slate-200">{result.suggestion}</p>
+              <Button onClick={() => navigate("/assistant", { state: { fromResults: true } })}>
+                {t("ask_assistant")}
+              </Button>
+              <p className="border-t border-white/10 pt-3 text-xs text-slate-500">{t("disclaimer")}</p>
             </div>
           </div>
 
-          {result.detections?.length > 1 && (
+          {result.top3?.length > 1 && (
             <div className="premium-card">
-              <p className="text-xs tracking-[0.2em] text-leafPrimary">{t("all_detections")}</p>
-              <ul className="mt-3 space-y-1 text-sm text-slate-300">
-                {result.detections.map((d, i) => (
-                  <li key={i}>
-                    {d.plant} - {d.disease}: {Number(d.confidence).toFixed(1)}%
+              <p className="text-xs tracking-[0.2em] text-leafPrimary">{t("top_predictions")}</p>
+              <ul className="mt-3 space-y-2 text-sm text-slate-300">
+                {result.top3.map((p, i) => (
+                  <li key={i} className="space-y-1">
+                    <div className="flex justify-between">
+                      <span>{p.plant} - {p.disease}</span>
+                      <span>{Number(p.confidence).toFixed(1)}%</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div className="h-full bg-leafPrimary/70" style={{ width: `${Math.min(100, p.confidence)}%` }} />
+                    </div>
                   </li>
                 ))}
               </ul>

@@ -1,116 +1,102 @@
-# Milestone 2 — Viva Notes & Demo Guide
+# Milestone 3 — Viva Notes & Demo Guide
 
 Project: **AgroNiddan (LeafX) — AI Plant Disease Detection from Leaf Images**
 
 ---
 
-## 1. Demo script (5 minutes)
+## 1. Demo script (6–7 minutes)
 
-**Before the viva:** double-click `run_demo.cmd` (or `python app.py`), wait for the browser to open at
-http://127.0.0.1:5000. Test leaves are in `demo_images/` (taken from the held-out test split, never seen in
-training; these are ones the model gets right). `demo_images/hard_cases/` has two it gets wrong (tomato late
-blight → squash powdery mildew; corn gray leaf spot → corn rust) — use them to discuss limitations.
-A phone photo of a real leaf also works, but expect mistakes: test accuracy is ~39 %.
+**Before the viva:** double-click `run_demo.cmd`; the browser opens http://127.0.0.1:5000 after ~8 s (the first
+scan takes ~4 s to warm up, then ~0.5 s). Make sure `.env` has `GEMINI_API_KEY` and the laptop is online (needed
+only for the assistant). Test leaves are in `demo_images/` — taken from the **held-out test split**, never used in
+training; the final model gets all 9 right. `demo_images/hard_cases/` has two harder ones (one now correct, one
+still wrong at low confidence) for discussing limitations.
 
-1. **Problem (30 s)** — Home page: farmers lose a large share of their yield to diseases they spot late; experts are scarce.
-2. **Data (1 min)** — open `reports/plantdoc_class_distribution.png` and `reports/plantdoc_class_imbalance.png`:
-   28 classes, 2,572 field images, imbalanced, 12 bad files found by our integrity check.
-3. **Model (1 min)** — open `reports/training/results.png` (loss going down, mAP going up) and
-   `reports/training/confusion_matrix_normalized.png`. Say: test mAP@50 = 0.435, top-1 accuracy 39 %, CPU baseline.
-4. **Live scan (2 min)** — Scan → Upload Image → Scan Now → Results: annotated box, plant, condition, confidence,
-   severity, health bar, treatment. Then show History.
-5. **Honesty check** — upload a non-leaf image: the app says *"Nothing detected"* instead of inventing a disease.
-6. **CLI (optional)** — `python model/predict.py --image <leaf.jpg>` prints the same report and saves an annotated image.
+1. **Problem (30 s)** — Home page: late-detected leaf diseases cost farmers yield; experts are scarce.
+2. **Data (45 s)** — `reports/plantdoc_class_distribution.png`, `plantdoc_class_imbalance.png`: 28 classes,
+   2,572 real field images, imbalanced, 12 bad files found by the integrity check.
+3. **Model improvement (1 min)** — `reports/training_cls/results.png`: M2 detector **39.1 %** → M3 classifier
+   **67.6 %** test accuracy (top-5 **95.7 %**). Show the confusion matrix (`confusion_matrix_normalized.png`).
+4. **Log in (20 s)** — Login → create an account (shows the auth feature).
+5. **Live scan (1.5 min)** — Scan → Upload → Scan Now → Results: plant, disease, confidence, severity, health bar,
+   top-3, treatment, "Saved to your history".
+6. **Explainable AI (45 s)** — click **Heatmap (Grad-CAM)**: red = where the model looked (the lesions).
+7. **AI assistant (1 min)** — "Ask the AI assistant": question is pre-filled from the scan; ask a follow-up
+   (e.g. "Can I still eat the tubers?") or a question in Hindi.
+8. **History + privacy (20 s)** — History shows only this user's scans; log out → History asks you to log in.
+9. **Honesty check (20 s)** — upload a non-leaf picture → "Not sure" instead of a made-up disease.
 
-If the browser fails, the CLI in step 6 is the backup demo.
+Backup if the browser fails: `python model/predict.py --image demo_images/<file>.jpg` (prints the diagnosis and
+saves the annotated image + Grad-CAM heatmap).
 
 ---
 
-## 2. M1 — Problem domain (3 marks)
+## 2. M1 — Problem domain
 
 - **Domain:** precision agriculture / computer vision for crop health.
 - **Problem:** visual diagnosis of leaf diseases is slow, needs experts, and errors lead to wrong or excessive pesticide use.
-- **Users:** small farmers, home gardeners, agri-extension workers — people with a phone camera but no plant pathologist.
-- **Input → output:** leaf photo → plant + condition (28 classes) + confidence + severity + treatment.
-- **Why hard:** real field photos have clutter, multiple leaves, varying light; many diseases look alike (e.g. early vs late blight); classes are small and imbalanced.
+- **Users:** small farmers, home gardeners, agri-extension workers with a phone camera.
+- **Input → output:** leaf photo → plant + condition (28 classes) + confidence + severity + treatment + explanation.
+- **Why hard:** cluttered field photos, multiple leaves, varying light, look-alike diseases, small imbalanced classes.
 
-## 3. M2 — Existing systems & feasibility (3 marks)
+## 3. M2 — Existing systems & feasibility
 
 | Existing approach | Limitation | What we do |
 |---|---|---|
-| Manual inspection by experts / Krishi Vigyan Kendras | slow, not scalable, not available everywhere | instant, on any device with a browser |
-| CNN classifiers trained on **PlantVillage** (≈99 % lab accuracy, e.g. Mohanty et al. 2016) | lab images on plain backgrounds; accuracy drops sharply on field photos | we train on **PlantDoc** — real field images |
-| Apps like Plantix | closed source, need internet & account | open, local, explainable pipeline |
-| Plain classifiers | one label per image, no location | **YOLO detection** gives a box → location + area for severity |
+| Manual inspection by experts | slow, not scalable | instant, any browser |
+| CNNs on **PlantVillage** (≈99 % in the lab, Mohanty et al. 2016) | plain backgrounds; collapse on field photos | trained on **PlantDoc** real field images |
+| Commercial apps (Plantix) | closed, black box | open pipeline + Grad-CAM explanation |
+| Plain classifiers | no location / severity | classifier + detector + colour severity |
 
-**Feasibility**
-- *Technical:* open-source stack (Ultralytics YOLOv8, PyTorch, Flask, React); transfer learning makes small datasets workable; baseline trains on a laptop CPU, full model on free Colab T4.
-- *Data:* PlantDoc is public (CC-BY-4.0), 2.5k images, 28 classes.
-- *Economic:* zero licence cost; runs on existing hardware.
-- *Operational:* web app usable from a phone; ~100–300 ms inference per image on CPU.
+Feasibility: open-source stack, transfer learning, trains on a laptop CPU, free Gemini tier, runs on any browser.
 
-## 4. Objectives & methodology (3 marks)
+## 4. Objectives & methodology
 
-**Objectives**
-1. Build a clean, reproducible dataset pipeline (EDA, integrity check, split, resize).
-2. Train a YOLOv8 detector for 28 leaf classes and evaluate with mAP, precision, recall.
-3. Convert detections into farmer-friendly output: plant, condition, severity, health, treatment.
-4. Deliver it through a REST API and a web UI with scan history.
+1. Reproducible data pipeline — `plantdoc_preprocessing.py`, `generate_yolo_labels_from_folders.py`, `dataset_preparation.py` (seed-42 70/20/10 split, resize ≤640 px).
+2. M2 baseline detector — `train_yolo.py` (YOLOv8n, 15 epochs, 256 px, frozen backbone) → 39.1 %.
+3. **M3 classifier** — `prepare_classification_dataset.py` (same split, class folders, hard links) → `train_classifier.py` (YOLOv8s-cls, ImageNet-pretrained, 60 epochs, 224 px) → 67.6 %.
+4. Post-processing — `model/classifier.py` `diagnose()`: classifier + detector box + HSV severity + Grad-CAM + treatment.
+5. Delivery — `app.py` (REST API, accounts, chat) + React UI (`DTI/src`).
 
-**Methodology (what each script does)**
-1. `plantdoc_preprocessing.py` — counts per class, opens every image to catch corrupt files, size stats, plots.
-2. `generate_yolo_labels_from_folders.py` — PlantDoc's classification release has no lesion boxes, so each image gets one full-image box (`class 0.5 0.5 1.0 1.0`) labelled with its folder name.
-3. `dataset_preparation.py` — pairs images with labels, shuffles (seed 42), splits 70/20/10, converts to RGB JPEG ≤640 px (faster loading; normalized labels stay valid).
-4. `train_yolo.py` — transfer learning from COCO-pretrained `yolov8n.pt`; CPU baseline: 15 epochs, 256 px, batch 16, backbone frozen (`--freeze 10`). Ultralytics adds augmentation (mosaic, HSV jitter, flips, scaling).
-5. `model/predict.py` — inference + post-processing, shared by CLI and API.
-6. `app.py` + `DTI/` — Flask API and React UI.
+## 5. Algorithms / techniques
 
-## 5. Algorithms / techniques (3 marks)
+- **Why we switched to a classifier (M3):** PlantDoc gives one label per image, so our detector boxes were the whole image — the task is really *classification*. A classifier learns it directly from strong ImageNet features: 39.1 % → 67.6 % on the same test images.
+- **YOLOv8s-cls:** CSPDarknet backbone (Conv + C2f blocks) → classification head (1×1 conv to 1280 channels → global average pool → linear 28-way). Loss: cross-entropy. 5.1 M parameters, 12.5 GFLOPs at 224 px.
+- **Training details:** AdamW (lr 0.000313, auto-selected), 3 warm-up epochs, RandAugment + random erasing (0.4) + horizontal flips, batch 32, 224 px, best epoch kept by validation top-1 (`best.pt` = epoch 57).
+- **Detector (kept from M2):** YOLOv8n — anchor-free decoupled head, CIoU + DFL box loss, NMS; now only used to find the leaf box.
+- **Grad-CAM (explainable AI):** take the feature maps of the last backbone block (layer 8, 512 × 7 × 7), weight each channel by the average gradient of the predicted class's score, sum, ReLU, normalise, upscale, colour (red = most important).
+- **Severity:** HSV colour thresholds inside the leaf box — infected % = yellow/brown pixels ÷ plant pixels → Low (<10), Medium (<30), Severe; health = 100 − infected %.
+- **Metrics:** top-1 accuracy = share of images whose top prediction is right; top-5 = right answer among the 5 best guesses. (Detector: precision, recall, IoU, mAP@50.)
+- **Assistant:** Google Gemini via the `google-genai` SDK, a system prompt restricting it to farming topics, scan context, last 10 messages of history, automatic fallback across models.
+- **Security:** scrypt password hashing (Werkzeug), signed HTTP-only session cookies, per-user data isolation, parameterised SQL (no injection).
 
-- **YOLOv8 (Ultralytics, 2023)** — one-stage detector: CSPDarknet-style backbone (C2f blocks) → PAN-FPN neck (multi-scale features) → **anchor-free decoupled head** (separate box & class branches).
-  - Loss: box = **CIoU + DFL** (distribution focal loss), class = **BCE**. These are the `box_loss`, `dfl_loss`, `cls_loss` columns in `results.csv`.
-  - Post-processing: confidence threshold (0.25) + **NMS** (IoU 0.7).
-  - *Why YOLO:* real-time on CPU, gives location (needed for severity), easy transfer learning, exports to ONNX/TFLite for mobile later.
-  - *Why the `n` (nano) variant now:* 3.2 M params, trains on a CPU laptop. Final: `s` variant on GPU.
-- **Transfer learning + freezing** — start from COCO weights; freezing the first 10 layers (backbone) means only neck + head learn → ~2× faster, less overfitting on 1.8k images.
-- **Metrics**
-  - Precision = TP / (TP + FP); Recall = TP / (TP + FN).
-  - **mAP@50** = mean over classes of the area under the precision-recall curve, a box counts as correct if IoU ≥ 0.5.
-  - **mAP@50-95** = same, averaged over IoU 0.5…0.95 (stricter).
-  - IoU = overlap area / union area of predicted and true box.
-- **Severity (classical CV on top of DL)** — inside the detected box, convert to HSV; plant pixels = saturated, not dark, hue < 90; lesion pixels = plant pixels with yellow/brown hue (< 35) instead of green. Infected % = lesion / plant pixels; severity = infected % → Low (<10), Medium (<30), Severe; health = 100 − infected %; healthy class → severity 0, health 100.
-- **Rule-based advice** — lookup table from condition to standard first-line treatment (e.g. Early Blight → Mancozeb / Chlorothalonil).
-
-## 6. Design ↔ implementation sync (3 marks)
+## 6. Design ↔ implementation sync
 
 | Design block | Implemented in |
 |---|---|
-| Data analysis | `plantdoc_preprocessing.py` → `reports/` |
-| Label generation | `generate_yolo_labels_from_folders.py` → `data.yaml`, `classes_mapping.txt` |
-| Split + preprocessing | `dataset_preparation.py` |
-| Model training | `train_yolo.py` → `runs/detect/train/weights/best.pt` |
-| Inference + severity + advice | `model/predict.py` (single source of truth for CLI and API) |
-| REST API | `app.py`: `GET /api/health`, `POST /api/predict`, `GET /api/history` |
-| Storage | SQLite `predictions.db` (table `predictions`) |
-| UI | `DTI/src/layers/ui/pages/` — Landing, Scan, Results, History |
-
-Request flow: React reads the file → downscales to ≤1024 px → base64 → `POST /api/predict` → PIL image → YOLO →
-`summarize_detections()` → JSON + annotated JPEG → Results page → row saved in SQLite → visible on History.
+| Data analysis / pipeline | `plantdoc_preprocessing.py`, `generate_yolo_labels_from_folders.py`, `dataset_preparation.py`, `prepare_classification_dataset.py` |
+| Training | `train_yolo.py` (detector), `train_classifier.py` (classifier, `--resume`) |
+| Diagnosis | `model/classifier.py` (`diagnose`, `grad_cam`), `model/predict.py` (classes, severity, advice, CLI) |
+| API | `app.py`: `/api/health`, `/api/predict`, `/api/history`, `/api/auth/*`, `/api/chat` |
+| Storage | SQLite `predictions.db`: `users`, `predictions` (with `user_id`) |
+| UI | `DTI/src/layers/ui/pages/`: Landing, Scan, Results, Assistant, History, Login |
 
 ---
 
 ## 7. Likely viva questions
 
-- **Why PlantDoc and not PlantVillage?** PlantVillage images are lab shots on plain backgrounds; models score ~99 % there but fail on real photos. PlantDoc is real field data — harder, but honest.
-- **What are your results?** Test set (256 held-out images): mAP@50 = 0.435, precision 0.39, recall 0.39, top-1 accuracy 39.1 %. Validation mAP@50 = 0.424. mAP@50 rose from 0.066 (epoch 1) to 0.424 (epoch 15) and was still rising.
-- **Your mAP is low — why?** Small dataset (~1.8k train images for 28 classes), similar-looking diseases, CPU budget (256 px, 15 epochs, frozen backbone). PlantDoc is known to be hard: in the PlantDoc paper even the best fine-tuned classifier reached only about 70 % accuracy, and models trained on lab images do far worse. Fixes planned: GPU training at 640 px with YOLOv8s, more epochs, class balancing, merging PlantVillage data.
-- **Why detection if every box is the whole image?** The pipeline and API are detection-ready; for M2 we used full-image weak labels because the classification release has no lesion boxes. Next step: the PlantDoc *object-detection* release (~9k hand-drawn leaf boxes) so boxes mark individual leaves.
-- **Is the severity real?** It's an estimate: the share of yellow/brown pixels in the leaf area (HSV thresholds). It fails for white symptoms (powdery mildew), viral mottling and brown backgrounds. A true infected-area % needs lesion segmentation (YOLOv8-seg) — planned.
-- **What happens on a random photo?** If no box passes 25 % confidence, the API returns "no detection". (The original code returned a random disease here — we removed that.)
-- **Overfitting?** Watch val loss vs train loss in `results.png`; augmentation, frozen backbone and early stopping (best.pt = best val fitness) limit it.
-- **What is NMS?** Removes duplicate boxes: keep the highest-confidence box, drop others with IoU above a threshold.
-- **Why Flask + React?** Clear separation: model in Python, UI in the browser; the same API can serve a mobile app later.
-- **How is data split?** Random 70/20/10 with fixed seed 42; test split is never used for training.
+- **What are your results?** Test (256 unseen images): **67.6 % top-1, 95.7 % top-5**. Validation best 68.0 % (epoch 57). M2 detector: 39.1 %.
+- **Why not 70 %+?** PlantDoc is hard — in the PlantDoc paper the best fine-tuned model reached ≈70 %; we're close on a laptop CPU. Accuracy plateaued around 66–68 % from epoch ~25. Next: stronger backbone (EfficientNetV2 / ConvNeXt), larger images (320 px), GPU training.
+- **Did you try anything else?** Test-time augmentation (averaging flipped/zoomed views) — only +0.6 % on validation and 4× slower, so we didn't use it.
+- **Where does it fail?** Soybean (0/4), tomato early blight and leaf mold (1/6). Most common confusion: potato early blight → late blight (5×) — visually similar.
+- **Overfitting?** Train loss fell to 0.10 while validation loss stayed ≈1.7 — some overfitting; augmentation and keeping the best validation epoch limit its effect.
+- **How did you keep the evaluation fair?** Same seed-42 split as M2; model chosen on validation only; test set scored once at the end.
+- **What is Grad-CAM showing?** Which image regions increased the predicted class's score — on diseased leaves it highlights lesions, so the model is looking at the right thing.
+- **Training was interrupted — how?** The laptop shut down twice; Ultralytics checkpoints every epoch (`last.pt`), so we resumed from epoch 17 with the same optimizer state (`train_classifier.py --resume`).
+- **How are passwords stored?** Never in plain text: scrypt hashes (salted, slow to brute-force).
+- **Why might the chatbot fail?** It needs internet and a Gemini key; if a model is overloaded or retired, the app automatically tries other models and shows a clear message if all fail.
+- **What happens on a random photo?** If the top prediction is below 25 % confidence, the app says it isn't sure.
+- **Why PlantDoc and not PlantVillage?** PlantVillage is lab images (~99 % but useless on real photos); PlantDoc is real field data.
 
 ---
 
@@ -118,17 +104,16 @@ Request flow: React reads the file → downscales to ≤1024 px → base64 → `
 
 | Member | Part owned | Files |
 |---|---|---|
-| _Name 1_ | Dataset analysis & pipeline | `plantdoc_preprocessing.py`, `generate_yolo_labels_from_folders.py`, `dataset_preparation.py` |
-| _Name 2_ | Model training & evaluation | `train_yolo.py`, `PlantDoc_YOLOv8_Colab.ipynb`, `reports/training/` |
-| _Name 3_ | Inference & backend API | `model/predict.py`, `app.py` |
+| _Name 1_ | Dataset analysis & pipeline | `plantdoc_preprocessing.py`, `generate_yolo_labels_from_folders.py`, `dataset_preparation.py`, `prepare_classification_dataset.py` |
+| _Name 2_ | Model training & evaluation, Grad-CAM | `train_yolo.py`, `train_classifier.py`, `model/classifier.py`, `reports/` |
+| _Name 3_ | Backend API, accounts, chatbot | `app.py`, `model/predict.py` |
 | _Name 4_ | Frontend | `DTI/src/` |
 
 Each member should be able to run and explain their own part.
 
 ---
 
-## 9. Next milestone (final)
+## 9. Next steps
 
-GPU training (YOLOv8s, 640 px, 100 epochs) · real lesion boxes / segmentation · add PlantVillage data · ONNX
-export for mobile · Gemini-based treatment chatbot · weather-based risk tips · Hindi and other regional languages ·
-user accounts.
+Stronger backbone / larger images on GPU (target > 70 %) · lesion segmentation for true severity · more data
+(PlantVillage) · ONNX/TFLite export for a mobile app · weather-based disease-risk tips · Hindi and regional-language UI.

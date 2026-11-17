@@ -36,6 +36,13 @@ fixed_plantvillage_yolov8_detection_notebook.ipynb
 !/runs/detect/train/weights/
 /runs/detect/train/weights/*
 !/runs/detect/train/weights/best.pt
+!/runs/classify/
+/runs/classify/*
+!/runs/classify/train/
+/runs/classify/train/*
+!/runs/classify/train/weights/
+/runs/classify/train/weights/*
+!/runs/classify/train/weights/best.pt
 
 # =============================================================================
 # Python
@@ -87,3 +94,6 @@ desktop.ini
 # =============================================================================
 # Misc / Temp
 # =============================================================================
+
+# Login session signing key (generated at first run)
+.flask_secret

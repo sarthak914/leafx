@@ -7,6 +7,8 @@ import Landing from "./layers/ui/pages/Landing";
 import Scan from "./layers/ui/pages/Scan";
 import Results from "./layers/ui/pages/Results";
 import History from "./layers/ui/pages/History";
+import Assistant from "./layers/ui/pages/Assistant";
+import Login from "./layers/ui/pages/Login";
 
 function App() {
   return (
@@ -21,7 +23,9 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/scan" element={<Scan />} />
             <Route path="/results" element={<Results />} />
+            <Route path="/assistant" element={<Assistant />} />
             <Route path="/history" element={<History />} />
+            <Route path="/login" element={<Login />} />
           </Routes>
         </PageTransition>
       </AnimatePresence>
